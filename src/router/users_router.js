@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const controller = require('../controller/users_controller.js');
+const controller = require('../controller/users_controller');
+const validate = require('../middleware/validate');
+const { createUserSchema, loginSchema } = require('../middleware/validators/user.validator');
 
-// router.get('/', controller.list || controller.get_all || controller.get); // Implementation missing
-// router.get('/:id', controller.get || controller.get_one || controller.getOne || controller.getById); // Implementation missing
-router.post('/', controller.create_user);
-// router.put('/:id', controller.update || controller.update_one || controller.updateOne); // Implementation missing
-// router.delete('/:id', controller.delete || controller.delete_one || controller.deleteOne); // Implementation missing
+// User routes with validation
+router.post('/register', validate(createUserSchema), controller.create_user);
+router.post('/login', validate(loginSchema), controller.login_user);
 
 module.exports = router;
