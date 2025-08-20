@@ -5,7 +5,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const bodyParser = require('body-parser');
 const cookie=require ('cookie-parser')
-const db = require('./src/db/dbConnection');
+const dbConnection = require('./src/db/dbConnection');
 const routers = require('./src/router/index');
 
 const app = express();
@@ -28,8 +28,17 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
-dbConnection("auth1","postgres","govind")
-    app.listen(PORT, () => {console.log(`Server running on port ${PORT}`)
+
+const startServer = async () => {
+  await dbConnection();
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
   });
+};
+
+startServer().catch(error => {
+  console.error('Failed to start server:', error);
+  process.exit(1);
+});
   
   
