@@ -1,9 +1,9 @@
-// import { User } from "../db/dbConnection.js";
-import bcryptjs from "bcryptjs";
-import jwt from "jsonwebtoken"
-import { generateAccessToken, generateRefreshToken } from "./auth/auth.js";
+const { User } = require('../models');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const { generateAccessToken, generateRefreshToken } = require('./auth/auth.js');
 
-export const registerController = async (req, res) => {
+const registerController = async (req, res) => {
   // return res.json("hello");
   //console.log(req.body)
   const { username, email, password } = req.body;
@@ -11,7 +11,7 @@ export const registerController = async (req, res) => {
   if (existUser != null) {
     return res.status(409).json("User is already exist");
   } else {
-    const hashedPass = await bcryptjs.hash(password, 10);
+    const hashedPass = await bcrypt.hash(password, 10);
     const user = await User.create({
       ...req.body,
       password: hashedPass,
@@ -25,13 +25,13 @@ export const registerController = async (req, res) => {
   }
 };
 
-export const loginController = async (req, res) => {
+const loginController = async (req, res) => {
   const { username, password, email } = req.body;
   console.log(req.body)
   try {
     const exist = await User.findOne({ where: { username: username } });
     if (exist != null) {
-      const isValid =  await bcryptjs.compare(password, exist.password);
+      const isValid =  await bcrypt.compare(password, exist.password);
       if (!isValid) {
         return res.status(401).json("Credential invalid");
       }
@@ -50,7 +50,7 @@ export const loginController = async (req, res) => {
         }
       });
     }else{
-      return res.status().json("User is not exist");
+      return res.status(404).json("User is not exist");
     }
   } catch (e) {
     console.log("Internal Error");
@@ -58,7 +58,7 @@ export const loginController = async (req, res) => {
   }
 };
 
-export const  refreshController=async(req,res)=>{
+const refreshController = async (req, res) => {
   const refreshToken=req.cookies.refereshToken
   //console.log(refreshToken)
   try{
@@ -82,20 +82,37 @@ export const  refreshController=async(req,res)=>{
 
 }
 
-export const logoutController=async(req,res)=>{
+const logoutController = async (req, res) => {
   const refreshToken=req.cookies.refereshToken;
   if(!refreshToken){
     return res.status(403).json("token is empty");
   }
-  const user=await User.findOne({where:{refereshToken:refreshToken}});
-  if(user!=null){
-    user.update({refereshToken:null})
+  const user = await User.findOne({ where: { refereshToken: refreshToken } });
+  if (user) {
+    user.refereshToken = null;
+    await user.save();
   }
   res.clearCookie("refereshToken")
   return res.status(200).json("logout successfully");
 
 }
 
-export const profileController=async(req,res)=>{
-    return res.json("Dashboard");
-}
+const profileController = async (req, res) => {
+    try {
+        const user = await User.findOne({ where: { username: req.user.username } });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        res.json({ id: user.id, username: user.username, email: user.email });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+module.exports = {
+  registerController,
+  loginController,
+  refreshController,
+  logoutController,
+  profileController
+};
